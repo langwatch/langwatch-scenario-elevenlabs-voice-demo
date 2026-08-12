@@ -1,15 +1,12 @@
 /**
- * Clean-room repro for @langwatch/scenario@0.5.0 — hosted-ElevenLabs multi-turn voice.
+ * Hosted-ElevenLabs multi-turn voice demo for @langwatch/scenario.
  *
- * Proves three things a client was confused about on 0.4.12:
- *   1. connect + greeting drain + one voiced exchange (no "receiveAudio timed out"),
+ * Three scenarios, in increasing autonomy:
+ *   1. connect + greeting drain + one voiced exchange,
  *   2. explicit multi-turn including a bare user() the simulator invents + voices,
- *   3. proceed(N) sends AUDIO (not text) and drives autonomous turns — issue #705.
+ *   3. proceed(N), which synthesizes each generated user turn to audio.
  *
- * All API names/signatures were resolved ONLY from
- * node_modules/@langwatch/scenario/dist/index.d.ts (clean-room; no example/docs).
- *
- * Run all three:      npm run run
+ * Run all three:       npm run run
  * Run a subset/order:  npm run run -- 1        (just #1)
  *                      npm run run -- 3 2      (#3 then #2)
  */
@@ -70,8 +67,7 @@ interface ScenarioDef {
 const scenarios: ScenarioDef[] = [
   {
     name: "1-single-exchange",
-    proves:
-      "connect + greeting drain + one voiced exchange (no receiveAudio timeout)",
+    proves: "connect + greeting drain + one voiced exchange",
     buildScript: () => [
       scenario.agent(), // FIRST agent() drains EL's connect-time greeting
       scenario.user("Hi, I have a question about my account balance."),
@@ -96,13 +92,12 @@ const scenarios: ScenarioDef[] = [
   },
   {
     name: "3-multiturn-proceed",
-    proves:
-      "proceed(4) sends AUDIO (issue #705 fix) and drives autonomous turns",
+    proves: "proceed(4) sends audio per turn and drives autonomous turns",
     buildScript: () => [
       scenario.agent(),
       scenario.user("Hi, I have a couple of account questions."),
       scenario.agent(), // REQUIRED: drains the reply, else agent();user();proceed() doubles the user turn
-      scenario.proceed(4), // must now send AUDIO per turn (the client's #1 bug on 0.4.12)
+      scenario.proceed(4), // each generated user turn is synthesized to audio
       scenario.judge(),
     ],
   },
@@ -118,9 +113,12 @@ function turnCounts(messages: ScenarioResult["messages"]): string {
 
 /**
  * Run one scenario with FRESH adapters (each ElevenLabs adapter opens its own
- * socket — never reused across runs). A thrown error (timeout / "receiveAudio
- * timed out" / "realtime user unsupported") is the FAILURE signal we test is
- * gone: caught, printed as THREW, and the next scenario still runs.
+ * socket, never reused across runs). A thrown error (a timeout, "receiveAudio
+ * timed out", "realtime user unsupported") is a transport failure: caught,
+ * printed as THREW, and the next scenario still runs.
+ *
+ * If a real agent is simply slow to start speaking, raise the wait with
+ * `agent.responseTimeout = 180` on the adapter instance before running.
  */
 async function runOne(def: ScenarioDef): Promise<void> {
   console.log(`\n=== ${def.name} ===`);
@@ -187,4 +185,4 @@ for (const def of selected) {
   await runOne(def); // sequential — one failure never aborts the others
 }
 
-process.exit(0); // manual repro, not CI: always exit clean (voice sockets can leave open handles)
+process.exit(0); // manual demo, not CI: always exit clean (voice sockets can leave open handles)

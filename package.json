@@ -1,16 +1,16 @@
 {
-  "name": "scenario-050-repro",
+  "name": "langwatch-scenario-elevenlabs-voice-demo",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Standalone clean-room repro proving @langwatch/scenario@0.5.0 works for a hosted-ElevenLabs multi-turn voice scenario.",
+  "description": "Runnable demo of a hosted-ElevenLabs multi-turn voice scenario with @langwatch/scenario, an openai/nova voice user-simulator and an LLM judge.",
   "scripts": {
     "run": "node --env-file=.env --import tsx src/run.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.110",
-    "@langwatch/scenario": "^0.5.0"
+    "@langwatch/scenario": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
